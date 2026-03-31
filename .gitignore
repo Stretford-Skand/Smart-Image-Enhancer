@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# PyTorch model checkpoints & weights
+*.pth
+*.pt
+*.ckpt
+
+# Dataset directories (large files — add manually if needed)
+data/raw/
+data/processed/
+
+# Outputs
+outputs/
+results/
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
