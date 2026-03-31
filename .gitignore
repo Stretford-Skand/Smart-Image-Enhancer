@@ -41,3 +41,10 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Learning / phase exercises (local only)
+phase1_foundations/
+phase2_pytorch/
+phase3_cnn/
+phase4_unet/
+phase5_gan/
