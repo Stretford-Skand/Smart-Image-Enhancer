@@ -23,9 +23,8 @@ env/
 *.pt
 *.ckpt
 
-# Dataset directories (large files — add manually if needed)
-data/raw/
-data/processed/
+# Dataset directories (images are never committed)
+data/
 
 # Outputs
 outputs/
