@@ -15,15 +15,15 @@ Run from the project root:
     python scripts/verify_dataset.py
 """
 
+import sys
+from pathlib import Path
+
 import torch
 from torch.utils.data import DataLoader
-from pathlib import Path
-import sys
 
-# Allow imports from project root
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))  # noqa: E402
 
-from src.dataset import ImagePairDataset
+from src.dataset import ImagePairDataset  # noqa: E402
 
 
 def check(condition, label):
@@ -48,10 +48,10 @@ def verify_split(split, batch_size=4):
     all_ok &= check(high.ndim == 3,          f"high tensor is 3D: {tuple(high.shape)}")
     all_ok &= check(low.shape == high.shape, f"low and high shapes match: {tuple(low.shape)}")
     all_ok &= check(low.shape[0] == 1,       f"grayscale: C=1 (got {low.shape[0]})")
-    all_ok &= check(low.dtype  == torch.float32, f"low dtype is float32")
-    all_ok &= check(high.dtype == torch.float32, f"high dtype is float32")
-    all_ok &= check(low.min()  >= 0.0 and low.max()  <= 1.0, f"low  values in [0, 1]")
-    all_ok &= check(high.min() >= 0.0 and high.max() <= 1.0, f"high values in [0, 1]")
+    all_ok &= check(low.dtype  == torch.float32, "low dtype is float32")
+    all_ok &= check(high.dtype == torch.float32, "high dtype is float32")
+    all_ok &= check(low.min()  >= 0.0 and low.max()  <= 1.0, "low  values in [0, 1]")
+    all_ok &= check(high.min() >= 0.0 and high.max() <= 1.0, "high values in [0, 1]")
     all_ok &= check(not torch.equal(low, high), "low != high (degradation applied)")
 
     # Check DataLoader

@@ -8,16 +8,17 @@ Run from the project root:
     python scripts/explore_dataset.py
 """
 
-import cv2
-import numpy as np
-import torch
-from torch.utils.data import DataLoader
-from pathlib import Path
-import matplotlib.pyplot as plt
 import sys
+from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from src.dataset import ImagePairDataset
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+from torch.utils.data import DataLoader
+
+sys.path.insert(0, str(Path(__file__).parent.parent))  # noqa: E402
+
+from src.dataset import ImagePairDataset  # noqa: E402
 
 # ─────────────────────────────────────────────────────────────
 # STEP 1: What is on disk?
@@ -61,7 +62,7 @@ print(f"  len(ds) = {len(ds)}")
 print()
 
 low, high = ds[0]
-print(f"  ds[0] returns two tensors:")
+print("  ds[0] returns two tensors:")
 print(f"    low  -- shape={tuple(low.shape)}  dtype={low.dtype}  "
       f"min={low.min():.3f}  max={low.max():.3f}")
 print(f"    high -- shape={tuple(high.shape)}  dtype={high.dtype}  "
@@ -81,7 +82,7 @@ print("=" * 60)
 loader = DataLoader(ds, batch_size=8, shuffle=True, num_workers=0)
 batch_low, batch_high = next(iter(loader))
 
-print(f"  batch_size = 8")
+print("  batch_size = 8")
 print(f"  batch_low  shape: {tuple(batch_low.shape)}   (N, C, H, W)")
 print(f"  batch_high shape: {tuple(batch_high.shape)}   (N, C, H, W)")
 print()
@@ -121,8 +122,10 @@ print("=" * 60)
 
 n_samples = 4
 fig, axes = plt.subplots(3, n_samples, figsize=(14, 7))
-fig.suptitle("Dataset sample pairs  |  Row 1: Low (noisy)  |  Row 2: High (clean)  |  Row 3: Difference",
-             fontsize=11)
+fig.suptitle(
+    "Dataset sample pairs  |  Row 1: Low (noisy)  |  Row 2: High (clean)  |  Row 3: Difference",
+    fontsize=11
+)
 
 for col in range(n_samples):
     low_t, high_t = ds[col * 10]   # spread across the dataset
