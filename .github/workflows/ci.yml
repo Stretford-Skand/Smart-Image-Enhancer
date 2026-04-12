@@ -35,3 +35,6 @@ jobs:
         run: |
           python scripts/generate_sample_data.py
           python scripts/verify_dataset.py
+
+      - name: Model and training smoke tests
+        run: python scripts/smoke_test.py
