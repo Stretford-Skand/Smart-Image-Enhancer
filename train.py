@@ -7,11 +7,16 @@ Trains on paired (low, high) image data, evaluates with PSNR and SSIM
 on the validation set after each epoch, and saves a loss/metric plot.
 
 Usage:
-    python train.py
+    python train.py                          # fresh training run
+    python train.py --resume                 # resume from last checkpoint
+    python train.py --resume outputs/last_checkpoint.pth  # explicit path
 
-Configuration is at the top of the file under CONFIG.
+Checkpoints:
+    outputs/best_model.pth       -- best val PSNR (use for inference)
+    outputs/last_checkpoint.pth  -- latest epoch  (use for resume)
 """
 
+import argparse
 import time
 from pathlib import Path
 
@@ -21,6 +26,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
 from src.augmentation import PairedAugmentation
+from src.checkpoint import load_checkpoint, save_checkpoint
 from src.dataset import ImagePairDataset
 from src.metrics import psnr, ssim
 from src.model import ImageEnhancerCNN
@@ -156,7 +162,18 @@ def save_sample_images(model, val_loader, device, out_dir, n=4):
     return path
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train ImageEnhancerCNN")
+    parser.add_argument(
+        "--resume", nargs="?", const="outputs/last_checkpoint.pth",
+        metavar="CHECKPOINT",
+        help="Resume from a checkpoint. Defaults to outputs/last_checkpoint.pth",
+    )
+    return parser.parse_args()
+
+
 def main():
+    args   = parse_args()
     cfg    = CONFIG
     device = torch.device(cfg["device"])
     print(f"Device: {device}")
@@ -165,7 +182,7 @@ def main():
     train_loader, val_loader = make_loaders(cfg)
     print(f"Train batches: {len(train_loader)}  |  Val batches: {len(val_loader)}")
 
-    # Model
+    # Model and optimizer
     model = ImageEnhancerCNN(
         in_channels=1,
         num_features=cfg["num_features"],
@@ -180,15 +197,28 @@ def main():
     out_dir = Path(__file__).parent / "outputs"
     out_dir.mkdir(exist_ok=True)
 
-    # Training loop
-    history = {"train_loss": [], "val_loss": [], "val_psnr": [], "val_ssim": []}
+    # Resume or fresh start
+    history   = {"train_loss": [], "val_loss": [], "val_psnr": [], "val_ssim": []}
     best_psnr = 0.0
+    start_epoch = 1
 
+    if args.resume:
+        ckpt_path = Path(args.resume)
+        if not ckpt_path.exists():
+            print(f"Checkpoint not found: {ckpt_path}")
+            return
+        start_epoch, best_psnr, history = load_checkpoint(
+            ckpt_path, model, optimizer, device
+        )
+        start_epoch += 1   # resume from the next epoch
+        print(f"Resumed from {ckpt_path}  (epoch {start_epoch}, best PSNR {best_psnr:.2f} dB)")
+
+    # Training loop
     print()
     print(f"{'Epoch':>5}  {'Train Loss':>10}  {'Val Loss':>10}  {'PSNR':>8}  {'SSIM':>8}  {'Time':>6}")
     print("-" * 58)
 
-    for epoch in range(1, cfg["epochs"] + 1):
+    for epoch in range(start_epoch, cfg["epochs"] + 1):
         t0 = time.time()
 
         train_loss = train_one_epoch(model, train_loader, criterion, optimizer, device)
@@ -200,16 +230,30 @@ def main():
         history["val_ssim"].append(val_ssim_val)
 
         elapsed = time.time() - t0
-        marker = " *" if val_psnr > best_psnr else ""
+
+        # Save last checkpoint every epoch (for resume)
+        save_checkpoint(
+            out_dir / "last_checkpoint.pth",
+            epoch, model, optimizer, best_psnr, history,
+        )
+
+        # Save best checkpoint when PSNR improves
+        marker = ""
         if val_psnr > best_psnr:
             best_psnr = val_psnr
-            torch.save(model.state_dict(), out_dir / "best_model.pth")
+            save_checkpoint(
+                out_dir / "best_model.pth",
+                epoch, model, optimizer, best_psnr, history,
+            )
+            marker = " *"
 
         print(f"{epoch:>5}  {train_loss:>10.4f}  {val_loss:>10.4f}  "
               f"{val_psnr:>8.2f}  {val_ssim_val:>8.4f}  {elapsed:>5.1f}s{marker}")
 
     print()
     print(f"Best val PSNR: {best_psnr:.2f} dB")
+    print(f"Best model     -> {out_dir / 'best_model.pth'}")
+    print(f"Last checkpoint-> {out_dir / 'last_checkpoint.pth'}")
 
     # Plots
     plot_path   = save_plots(history, out_dir)
